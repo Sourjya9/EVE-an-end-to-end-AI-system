@@ -1,4 +1,4 @@
-﻿"""
+r"""
 LangGraph StateGraph Assembly.
 
 Assembles and compiles Eve\'s decision-making state machine:
