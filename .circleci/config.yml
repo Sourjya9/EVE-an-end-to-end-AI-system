@@ -1,0 +1,39 @@
+version: 2.1
+
+jobs:
+  backend-tests:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r eve/backend/requirements.txt
+      - run:
+          name: Run Linter
+          command: ruff check eve/backend
+      - run:
+          name: Run Type Checker
+          command: mypy eve/backend/app
+      - run:
+          name: Run Unit Tests
+          command: cd eve/backend && pytest tests -v
+
+  frontend-build:
+    docker:
+      - image: cimg/node:20.10
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: cd eve/frontend && npm ci
+      - run:
+          name: Build Frontend
+          command: cd eve/frontend && npm run build
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - backend-tests
+      - frontend-build
