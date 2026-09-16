@@ -120,7 +120,7 @@ class GroqClient:
                 max_tokens=max_tokens or settings.GROQ_MAX_TOKENS,
                 stream=True,
             )
-            async for chunk in stream:
+            async for chunk in stream:  # type: ignore[union-attr]
                 if (
                     chunk.choices
                     and chunk.choices[0].delta

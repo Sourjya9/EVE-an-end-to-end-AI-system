@@ -7,6 +7,7 @@ and Server-Sent Events (SSE) streaming with source citations.
 
 import time
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
@@ -261,7 +262,7 @@ class ChatService:
         await session.commit()
 
         # 3. Step 1 of LangGraph: Classification & Retrieval
-        state = {
+        state: dict[str, Any] = {
             "query": chat_req.message,
             "conversation_id": conv.id,
             "system_prompt": chat_req.system_prompt,

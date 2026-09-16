@@ -19,7 +19,7 @@ class TextChunk:
         content: str,
         start_char: int,
         end_char: int,
-        metadata: dict[str, Any] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.index = index
         self.content = content
@@ -41,7 +41,7 @@ def recursive_split_text(
     text: str,
     chunk_size: int = settings.RAG_CHUNK_SIZE,
     chunk_overlap: int = settings.RAG_CHUNK_OVERLAP,
-    separators: list[str] = None,
+    separators: list[str] | None = None,
 ) -> list[TextChunk]:
     """
     Splits text into chunks of maximum length chunk_size with chunk_overlap.

@@ -14,7 +14,7 @@ Assembles and compiles Eve\'s decision-making state machine:
 
 from typing import Any
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import END, StateGraph  # type: ignore[import-untyped]
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.agents.nodes import (
