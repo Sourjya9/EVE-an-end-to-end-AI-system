@@ -31,9 +31,10 @@ htmlcov/
 .ruff_cache/
 
 # Node & Next.js
-eve/frontend/node_modules/
-eve/frontend/.next/
-eve/frontend/out/
+node_modules/
+.next/
+out/
+next-env.d.ts
 
 # Environment Variables
 .env
