@@ -38,7 +38,7 @@ async def classify_request(state: AgentState) -> dict[str, Any]:
             "good morning",
             "good evening",
         ]
-        if query in greetings or len(query.split()) <= 2:
+        if any(query.startswith(g) for g in greetings) or len(query.split()) <= 2:
             return {
                 "request_type": "direct_chat",
                 "needs_retrieval": False,

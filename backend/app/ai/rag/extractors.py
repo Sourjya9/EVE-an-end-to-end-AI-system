@@ -88,10 +88,10 @@ def extract_document_text(filename: str, content_bytes: bytes) -> tuple[str, str
     elif lower_name.endswith((".txt", ".text", ".log", ".csv")):
         return extract_text_from_txt(content_bytes), "txt"
     else:
-        # Default attempt as plain text
+        # Default attempt as strict UTF-8 plain text (no lossy fallback encodings for unknown extensions)
         try:
-            return extract_text_from_txt(content_bytes), "txt"
-        except Exception as err:
+            return clean_text(content_bytes.decode("utf-8")), "txt"
+        except UnicodeDecodeError as exc:
             raise DocumentExtractionError(
                 f"Unsupported file format for '{filename}'. Supported: PDF, TXT, MD."
-            ) from err
+            ) from exc

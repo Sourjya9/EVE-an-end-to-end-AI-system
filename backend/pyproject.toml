@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "eve-backend"
 version = "0.1.0"
 description = "Eve: A production-style end-to-end AI assistant backend"

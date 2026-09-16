@@ -4,7 +4,8 @@ Unit Tests for Vector Embeddings.
 
 import pytest
 
-from app.ai.rag.embeddings import JinaEmbeddingClient, _cosine_similarity
+from app.ai.rag.embeddings import JinaEmbeddingClient
+from app.ai.rag.retriever import _cosine_similarity
 
 
 @pytest.mark.asyncio
