@@ -26,7 +26,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@postgres:5432/eve
       GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
       JINA_API_KEY: ${JINA_API_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       OPIK_API_KEY: ${OPIK_API_KEY:-}
