@@ -1,4 +1,4 @@
-﻿"""
+"""
 Eve FastAPI Application Entrypoint.
 
 Configures application lifespan, CORS policies, routers, OpenAPI metadata,
@@ -7,9 +7,11 @@ and observability integrations.
 
 import time
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+
 from app.api.errors import register_error_handlers
 from app.api.routers import chat, documents, health, search
 from app.core.config import settings
@@ -22,7 +24,9 @@ from app.db.session import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager handling startup initialization and shutdown cleanup."""
-    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    logger.info(
+        f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]"
+    )
 
     # 1. Initialize Sentry
     init_sentry()
@@ -36,13 +40,17 @@ async def lifespan(app: FastAPI):
                     await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                     logger.info("pgvector extension verified.")
                 except Exception as ext_err:
-                    logger.warning(f"Could not initialize pgvector extension: {ext_err}")
+                    logger.warning(
+                        f"Could not initialize pgvector extension: {ext_err}"
+                    )
 
             # Create tables if not existing
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database schema verified.")
     except Exception as db_err:
-        logger.warning(f"Database connection could not be established during startup: {db_err}")
+        logger.warning(
+            f"Database connection could not be established during startup: {db_err}"
+        )
 
     yield
 

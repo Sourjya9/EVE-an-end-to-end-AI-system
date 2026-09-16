@@ -1,13 +1,13 @@
-﻿"""
+"""
 LangGraph Agent State Definition.
 
 Defines the typed dictionary tracking conversational and workflow state
 across classification, retrieval, and generation graph nodes.
 """
 
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Any
+
 from typing_extensions import TypedDict
-import operator
 
 
 class AgentState(TypedDict):
@@ -15,19 +15,19 @@ class AgentState(TypedDict):
 
     # Incoming request info
     query: str
-    conversation_id: Optional[str]
-    system_prompt: Optional[str]
-    history: List[Dict[str, str]]
+    conversation_id: str | None
+    system_prompt: str | None
+    history: list[dict[str, str]]
 
     # Classification node outputs
     request_type: str  # "direct_chat", "rag_retrieval", "tool_execution"
     needs_retrieval: bool
-    classification_reason: Optional[str]
+    classification_reason: str | None
 
     # Retrieval node outputs
-    retrieved_chunks: List[Dict[str, Any]]
-    citations: List[Dict[str, Any]]
+    retrieved_chunks: list[dict[str, Any]]
+    citations: list[dict[str, Any]]
 
     # Generation node outputs
     response_content: str
-    error: Optional[str]
+    error: str | None

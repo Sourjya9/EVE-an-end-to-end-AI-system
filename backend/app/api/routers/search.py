@@ -1,9 +1,10 @@
-﻿"""
+"""
 Semantic Search & Retrieval Router.
 """
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.ai.rag.embeddings import jina_client
 from app.ai.rag.retriever import retriever
 from app.db.session import get_db

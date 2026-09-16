@@ -1,8 +1,9 @@
-﻿"""
+"""
 Unit Tests for Vector Embeddings.
 """
 
 import pytest
+
 from app.ai.rag.embeddings import JinaEmbeddingClient, _cosine_similarity
 
 

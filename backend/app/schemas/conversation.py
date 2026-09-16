@@ -1,10 +1,11 @@
-﻿"""
+"""
 Conversation Schemas.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
+
 from app.schemas.chat import Citation
 
 
@@ -13,8 +14,8 @@ class MessageResponse(BaseModel):
     conversation_id: str
     role: str
     content: str
-    citations: Optional[List[Citation]] = None
-    token_count: Optional[int] = None
+    citations: list[Citation] | None = None
+    token_count: int | None = None
     created_at: datetime
 
     class Config:
@@ -22,13 +23,13 @@ class MessageResponse(BaseModel):
 
 
 class ConversationCreate(BaseModel):
-    title: Optional[str] = Field(default="New Conversation", max_length=255)
+    title: str | None = Field(default="New Conversation", max_length=255)
 
 
 class ConversationResponse(BaseModel):
     id: str
     title: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     created_at: datetime
     updated_at: datetime
     message_count: int = 0
@@ -40,10 +41,10 @@ class ConversationResponse(BaseModel):
 class ConversationDetailResponse(BaseModel):
     id: str
     title: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     created_at: datetime
     updated_at: datetime
-    messages: List[MessageResponse] = Field(default_factory=list)
+    messages: list[MessageResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

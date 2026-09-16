@@ -1,10 +1,10 @@
-﻿"""
+"""
 Document Schemas.
 """
 
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 
 class DocumentResponse(BaseModel):
@@ -14,7 +14,7 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     status: str
     chunk_count: int
-    error_message: Optional[str] = None
+    error_message: str | None = None
     created_at: datetime
 
     class Config:

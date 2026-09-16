@@ -1,4 +1,4 @@
-﻿"""
+"""
 Structured Logging Module for Eve.
 
 Provides JSON logging suitable for AWS CloudWatch and container log aggregators,
@@ -8,8 +8,9 @@ with readable fallback formatting for local development. Never prints secrets.
 import json
 import logging
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime
+from typing import Any
+
 from app.core.config import settings
 
 
@@ -17,8 +18,8 @@ class JSONFormatter(logging.Formatter):
     """Formats logs as single-line JSON records for CloudWatch and ELK."""
 
     def format(self, record: logging.LogRecord) -> str:
-        log_object: Dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+        log_object: dict[str, Any] = {
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "message": record.getMessage(),
             "logger": record.name,

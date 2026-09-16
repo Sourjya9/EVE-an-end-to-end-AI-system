@@ -1,11 +1,10 @@
-﻿"""
+"""
 Sentry Error Monitoring Integration.
 
 Captures unhandled exceptions and performance transactions in production,
 while remaining a clean no-op if SENTRY_DSN is not configured.
 """
 
-from typing import Optional
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -13,6 +12,7 @@ try:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
     from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
     SENTRY_AVAILABLE = True
 except ImportError:
     SENTRY_AVAILABLE = False
@@ -46,7 +46,7 @@ def init_sentry() -> None:
         logger.error(f"Failed to initialize Sentry: {exc}")
 
 
-def capture_exception(exc: Exception, context: Optional[dict] = None) -> None:
+def capture_exception(exc: Exception, context: dict | None = None) -> None:
     """Manually captures an exception to Sentry with optional context tags."""
     if settings.SENTRY_DSN and SENTRY_AVAILABLE:
         if context:

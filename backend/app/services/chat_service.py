@@ -1,30 +1,28 @@
-﻿"""
+"""
 Chat & Conversation Orchestration Service.
 
 Manages conversational sessions, message persistence, LangGraph execution,
 and Server-Sent Events (SSE) streaming with source citations.
 """
 
-import json
 import time
-from datetime import datetime, timezone
-from typing import AsyncGenerator, List, Optional
+from collections.abc import AsyncGenerator
+
 from fastapi import HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.ai.agents.graph import execute_agent_workflow, build_eve_graph
+
+from app.ai.agents.graph import execute_agent_workflow
 from app.ai.agents.nodes import classify_request, retrieve_context
 from app.ai.llm.groq_client import groq_client
-from app.core.config import settings
-from app.core.logging import logger
 from app.models.agent_run import AgentRun
 from app.models.conversation import Conversation
 from app.models.message import Message
 from app.schemas.chat import ChatRequest, ChatResponse, Citation, StreamChunk
 from app.schemas.conversation import (
-    ConversationResponse,
     ConversationDetailResponse,
+    ConversationResponse,
     MessageResponse,
 )
 
@@ -35,8 +33,8 @@ class ChatService:
     async def create_conversation(
         self,
         session: AsyncSession,
-        title: Optional[str] = "New Conversation",
-        user_id: Optional[str] = None,
+        title: str | None = "New Conversation",
+        user_id: str | None = None,
     ) -> Conversation:
         """Initializes a new persistent conversation thread."""
         conv = Conversation(title=title or "New Conversation", user_id=user_id)
@@ -48,8 +46,8 @@ class ChatService:
     async def list_conversations(
         self,
         session: AsyncSession,
-        user_id: Optional[str] = None,
-    ) -> List[ConversationResponse]:
+        user_id: str | None = None,
+    ) -> list[ConversationResponse]:
         """Lists recent conversations with message counts."""
         # Query conversations and join message count
         query = (
@@ -67,7 +65,7 @@ class ChatService:
         result = await session.execute(query)
         rows = result.all()
 
-        responses: List[ConversationResponse] = []
+        responses: list[ConversationResponse] = []
         for conv, count in rows:
             responses.append(
                 ConversationResponse(
@@ -127,20 +125,26 @@ class ChatService:
         self,
         session: AsyncSession,
         chat_req: ChatRequest,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> ChatResponse:
         """Processes a standard non-streaming chat request with persistence."""
         start_time = time.time()
 
         # 1. Get or create conversation
         if chat_req.conversation_id:
-            query = select(Conversation).where(Conversation.id == chat_req.conversation_id)
+            query = select(Conversation).where(
+                Conversation.id == chat_req.conversation_id
+            )
             result = await session.execute(query)
             conv = result.scalar_one_or_none()
             if not conv:
-                conv = await self.create_conversation(session, title=chat_req.message[:50], user_id=user_id)
+                conv = await self.create_conversation(
+                    session, title=chat_req.message[:50], user_id=user_id
+                )
         else:
-            conv = await self.create_conversation(session, title=chat_req.message[:50], user_id=user_id)
+            conv = await self.create_conversation(
+                session, title=chat_req.message[:50], user_id=user_id
+            )
 
         # 2. Persist incoming user message
         user_msg = Message(
@@ -160,8 +164,7 @@ class ChatService:
         )
         history_res = await session.execute(history_query)
         history_msgs = [
-            {"role": m.role, "content": m.content}
-            for m in history_res.scalars().all()
+            {"role": m.role, "content": m.content} for m in history_res.scalars().all()
         ]
 
         # 4. Execute LangGraph workflow
@@ -224,7 +227,7 @@ class ChatService:
         self,
         session: AsyncSession,
         chat_req: ChatRequest,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Streams response tokens and citations as Server-Sent Events (SSE).
@@ -234,13 +237,19 @@ class ChatService:
 
         # 1. Conversation resolution
         if chat_req.conversation_id:
-            query = select(Conversation).where(Conversation.id == chat_req.conversation_id)
+            query = select(Conversation).where(
+                Conversation.id == chat_req.conversation_id
+            )
             result = await session.execute(query)
             conv = result.scalar_one_or_none()
             if not conv:
-                conv = await self.create_conversation(session, title=chat_req.message[:50], user_id=user_id)
+                conv = await self.create_conversation(
+                    session, title=chat_req.message[:50], user_id=user_id
+                )
         else:
-            conv = await self.create_conversation(session, title=chat_req.message[:50], user_id=user_id)
+            conv = await self.create_conversation(
+                session, title=chat_req.message[:50], user_id=user_id
+            )
 
         # 2. Persist user message
         user_msg = Message(
@@ -300,7 +309,7 @@ class ChatService:
             "ground your response strictly in the context and cite relevant sources."
         )
 
-        messages: List[dict] = []
+        messages: list[dict] = []
         chunks = state.get("retrieved_chunks", [])
         if chunks:
             context_blocks = [

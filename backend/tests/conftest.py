@@ -1,4 +1,4 @@
-﻿"""
+"""
 Pytest Test Fixtures and Environment Configuration.
 
 Configures an in-memory test database, FastAPI test client, and AI mocks
@@ -6,12 +6,13 @@ ensuring the entire test suite executes without requiring live external API cred
 """
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from app.core.config import settings
+
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -56,6 +57,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture(scope="function")
 async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """HTTP async client configured with dependency injection for the test database."""
+
     async def override_get_db():
         yield db_session
 

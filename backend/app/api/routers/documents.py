@@ -1,10 +1,10 @@
-﻿"""
+"""
 Document Ingestion & Management Router.
 """
 
-from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.session import get_db
 from app.schemas.document import DocumentResponse, DocumentUploadResponse
 from app.services.document_service import document_service
@@ -24,7 +24,7 @@ async def upload_document(
     return await document_service.ingest_document(session=db, file=file)
 
 
-@router.get("", response_model=List[DocumentResponse])
+@router.get("", response_model=list[DocumentResponse])
 async def list_documents(
     db: AsyncSession = Depends(get_db),
 ):
@@ -38,7 +38,9 @@ async def delete_document(
     db: AsyncSession = Depends(get_db),
 ):
     """Deletes a document and all its vector chunks."""
-    success = await document_service.delete_document(session=db, document_id=document_id)
+    success = await document_service.delete_document(
+        session=db, document_id=document_id
+    )
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")
     return {"message": "Document deleted successfully", "id": document_id}

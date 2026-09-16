@@ -1,17 +1,17 @@
-﻿"""
+"""
 Document Ingestion & Management Service.
 
 Handles document upload, file validation, text extraction, chunking,
 embedding generation via Jina AI, and database persistence into PostgreSQL with pgvector.
 """
 
-from typing import List, Optional
-from fastapi import UploadFile, HTTPException
-from sqlalchemy import select, delete
+from fastapi import HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.ai.rag.chunking import recursive_split_text
 from app.ai.rag.embeddings import jina_client
-from app.ai.rag.extractors import extract_document_text, DocumentExtractionError
+from app.ai.rag.extractors import DocumentExtractionError, extract_document_text
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.document import Document
@@ -26,7 +26,7 @@ class DocumentService:
         self,
         session: AsyncSession,
         file: UploadFile,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> DocumentUploadResponse:
         """Processes an uploaded file into indexed vector chunks."""
         filename = file.filename or "unknown_document.txt"
@@ -77,10 +77,12 @@ class DocumentService:
 
             # 5. Compute vector embeddings in batch
             chunk_texts = [c.content for c in raw_chunks]
-            embeddings = await jina_client.embed_texts(chunk_texts, task="retrieval.passage")
+            embeddings = await jina_client.embed_texts(
+                chunk_texts, task="retrieval.passage"
+            )
 
             # 6. Save chunks with embeddings into PostgreSQL
-            for idx, (c, emb) in enumerate(zip(raw_chunks, embeddings)):
+            for idx, (c, emb) in enumerate(zip(raw_chunks, embeddings, strict=True)):
                 chunk_record = DocumentChunk(
                     document_id=doc_record.id,
                     chunk_index=idx,
@@ -97,7 +99,9 @@ class DocumentService:
             doc_record.status = "indexed"
             doc_record.chunk_count = len(raw_chunks)
             await session.commit()
-            logger.info(f"Successfully indexed document '{filename}' with {len(raw_chunks)} chunks.")
+            logger.info(
+                f"Successfully indexed document '{filename}' with {len(raw_chunks)} chunks."
+            )
 
             return DocumentUploadResponse(
                 document_id=doc_record.id,
@@ -113,13 +117,15 @@ class DocumentService:
             session.add(doc_record)
             await session.commit()
             logger.error(f"Failed to process and index document '{filename}': {exc}")
-            raise HTTPException(status_code=500, detail=f"Document indexing failed: {exc}") from exc
+            raise HTTPException(
+                status_code=500, detail=f"Document indexing failed: {exc}"
+            ) from exc
 
     async def list_documents(
         self,
         session: AsyncSession,
-        user_id: Optional[str] = None,
-    ) -> List[DocumentResponse]:
+        user_id: str | None = None,
+    ) -> list[DocumentResponse]:
         """Lists all uploaded documents with indexing status."""
         query = select(Document).order_by(Document.created_at.desc())
         if user_id:

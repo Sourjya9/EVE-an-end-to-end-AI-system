@@ -1,9 +1,10 @@
-﻿"""
+"""
 Unit Tests for Vector Retrieval.
 """
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.ai.rag.retriever import retriever
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk

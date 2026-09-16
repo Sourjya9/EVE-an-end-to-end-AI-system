@@ -1,4 +1,4 @@
-﻿"""
+"""
 Opik LLM & Agent Observability Integration.
 
 Tracks LLM calls, retrieval context, and LangGraph agent runs using Comet Opik.
@@ -6,13 +6,16 @@ Gracefully operates in mock/fallback mode if OPIK_API_KEY is not configured.
 """
 
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional
+from typing import Any
+
 from app.core.config import settings
 from app.core.logging import logger
 
 try:
     import opik
+
     OPIK_AVAILABLE = True
 except ImportError:
     OPIK_AVAILABLE = False
@@ -32,16 +35,27 @@ class OpikTracer:
                 )
                 logger.info("Opik LLM observability initialized successfully.")
             except Exception as exc:
-                logger.warning(f"Failed to initialize Opik client: {exc}. Tracing disabled.")
+                logger.warning(
+                    f"Failed to initialize Opik client: {exc}. Tracing disabled."
+                )
                 self.enabled = False
         else:
-            logger.info("Opik API key not configured; LLM tracing operating in local logging mode.")
+            logger.info(
+                "Opik API key not configured; LLM tracing operating in local logging mode."
+            )
 
     @contextmanager
-    def trace_span(self, name: str, input_data: Optional[Dict[str, Any]] = None) -> Generator[Dict[str, Any], None, None]:
+    def trace_span(
+        self, name: str, input_data: dict[str, Any] | None = None
+    ) -> Generator[dict[str, Any], None, None]:
         """Traces an agent node or LLM call, recording latency and metadata."""
         start_time = time.time()
-        span_data: Dict[str, Any] = {"name": name, "input": input_data or {}, "output": None, "error": None}
+        span_data: dict[str, Any] = {
+            "name": name,
+            "input": input_data or {},
+            "output": None,
+            "error": None,
+        }
 
         try:
             yield span_data
@@ -55,7 +69,9 @@ class OpikTracer:
             if self.enabled and self.client:
                 try:
                     # In Opik, log span or track call
-                    logger.debug(f"Opik trace logged: {name} completed in {span_data['latency_ms']}ms")
+                    logger.debug(
+                        f"Opik trace logged: {name} completed in {span_data['latency_ms']}ms"
+                    )
                 except Exception as trace_err:
                     logger.warning(f"Failed to submit Opik span: {trace_err}")
             else:

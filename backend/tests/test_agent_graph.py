@@ -1,10 +1,11 @@
-﻿"""
+"""
 Unit Tests for LangGraph Agent Nodes and Workflow.
 """
 
 import pytest
-from app.ai.agents.nodes import classify_request, generate_response
+
 from app.ai.agents.graph import execute_agent_workflow
+from app.ai.agents.nodes import classify_request
 
 
 @pytest.mark.asyncio
@@ -17,7 +18,10 @@ async def test_classify_request_greeting():
 
 @pytest.mark.asyncio
 async def test_classify_request_document_query():
-    state = {"query": "What does the uploaded architecture document say about PostgreSQL?", "history": []}
+    state = {
+        "query": "What does the uploaded architecture document say about PostgreSQL?",
+        "history": [],
+    }
     res = await classify_request(state)
     assert res["request_type"] == "rag_retrieval"
     assert res["needs_retrieval"] is True

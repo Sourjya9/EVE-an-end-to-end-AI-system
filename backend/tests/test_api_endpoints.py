@@ -1,8 +1,9 @@
-﻿"""
+"""
 Unit and Integration Tests for FastAPI API Endpoints.
 """
 
 import io
+
 import pytest
 from httpx import AsyncClient
 

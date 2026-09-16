@@ -1,4 +1,4 @@
-﻿"""
+"""
 Document Text Extraction Utilities.
 
 Extracts text from PDF, TXT, and Markdown formats with robust cleaning.
@@ -6,11 +6,12 @@ Extracts text from PDF, TXT, and Markdown formats with robust cleaning.
 
 import io
 import re
-from typing import Tuple
+
 from app.core.logging import logger
 
 try:
     import pypdf
+
     PYPDF_AVAILABLE = True
 except ImportError:
     PYPDF_AVAILABLE = False
@@ -18,6 +19,7 @@ except ImportError:
 
 class DocumentExtractionError(Exception):
     """Raised when document parsing fails."""
+
     pass
 
 
@@ -50,7 +52,9 @@ def extract_text_from_txt(content_bytes: bytes) -> str:
 def extract_text_from_pdf(content_bytes: bytes) -> str:
     """Extracts text page-by-page from PDF files using pypdf."""
     if not PYPDF_AVAILABLE:
-        raise DocumentExtractionError("pypdf library is not installed. PDF extraction unavailable.")
+        raise DocumentExtractionError(
+            "pypdf library is not installed. PDF extraction unavailable."
+        )
 
     try:
         reader = pypdf.PdfReader(io.BytesIO(content_bytes))
@@ -62,14 +66,16 @@ def extract_text_from_pdf(content_bytes: bytes) -> str:
 
         full_text = "\n\n".join(extracted_pages)
         if not full_text.strip():
-            logger.warning("PDF extraction yielded zero text characters (may be scanned image).")
+            logger.warning(
+                "PDF extraction yielded zero text characters (may be scanned image)."
+            )
             return ""
         return clean_text(full_text)
     except Exception as exc:
         raise DocumentExtractionError(f"Failed to extract PDF contents: {exc}") from exc
 
 
-def extract_document_text(filename: str, content_bytes: bytes) -> Tuple[str, str]:
+def extract_document_text(filename: str, content_bytes: bytes) -> tuple[str, str]:
     """
     Infers file type from filename extension and extracts cleaned plain text.
     Returns tuple of (cleaned_text, file_type).
@@ -85,5 +91,7 @@ def extract_document_text(filename: str, content_bytes: bytes) -> Tuple[str, str
         # Default attempt as plain text
         try:
             return extract_text_from_txt(content_bytes), "txt"
-        except Exception:
-            raise DocumentExtractionError(f"Unsupported file format for '{filename}'. Supported: PDF, TXT, MD.")
+        except Exception as err:
+            raise DocumentExtractionError(
+                f"Unsupported file format for '{filename}'. Supported: PDF, TXT, MD."
+            ) from err

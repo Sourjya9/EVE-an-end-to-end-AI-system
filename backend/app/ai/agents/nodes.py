@@ -1,4 +1,4 @@
-﻿"""
+"""
 LangGraph Agent Nodes.
 
 Individual, testable functional nodes for Eve's reasoning graph:
@@ -7,8 +7,10 @@ Individual, testable functional nodes for Eve's reasoning graph:
 3. generate_response: Produces a grounded or conversational response using Groq.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.ai.agents.state import AgentState
 from app.ai.llm.groq_client import groq_client
 from app.ai.rag.embeddings import jina_client
@@ -18,7 +20,7 @@ from app.core.logging import logger
 from app.core.observability.opik import opik_tracer
 
 
-async def classify_request(state: AgentState) -> Dict[str, Any]:
+async def classify_request(state: AgentState) -> dict[str, Any]:
     """
     Classifies the user query into direct chat or RAG retrieval.
     Can be expanded in future to support tool calling or multi-hop routing.
@@ -27,7 +29,15 @@ async def classify_request(state: AgentState) -> Dict[str, Any]:
         query = state["query"].lower().strip()
 
         # Simple high-speed heuristic: Greetings and basic questions don't need RAG
-        greetings = ["hello", "hi", "hey", "who are you", "what can you do", "good morning", "good evening"]
+        greetings = [
+            "hello",
+            "hi",
+            "hey",
+            "who are you",
+            "what can you do",
+            "good morning",
+            "good evening",
+        ]
         if query in greetings or len(query.split()) <= 2:
             return {
                 "request_type": "direct_chat",
@@ -37,9 +47,24 @@ async def classify_request(state: AgentState) -> Dict[str, Any]:
 
         # Knowledge or document retrieval triggers
         rag_keywords = [
-            "document", "doc", "pdf", "file", "uploaded", "summary", "summarize",
-            "search", "what does", "according to", "find", "explain", "policy",
-            "contract", "spec", "report", "notes", "based on"
+            "document",
+            "doc",
+            "pdf",
+            "file",
+            "uploaded",
+            "summary",
+            "summarize",
+            "search",
+            "what does",
+            "according to",
+            "find",
+            "explain",
+            "policy",
+            "contract",
+            "spec",
+            "report",
+            "notes",
+            "based on",
         ]
         needs_rag = any(kw in query for kw in rag_keywords)
 
@@ -51,11 +76,15 @@ async def classify_request(state: AgentState) -> Dict[str, Any]:
         return {
             "request_type": "rag_retrieval" if needs_rag else "direct_chat",
             "needs_retrieval": needs_rag,
-            "classification_reason": "Query contains information-seeking intent" if needs_rag else "Direct conversation",
+            "classification_reason": "Query contains information-seeking intent"
+            if needs_rag
+            else "Direct conversation",
         }
 
 
-async def retrieve_context(state: AgentState, session: Optional[AsyncSession] = None) -> Dict[str, Any]:
+async def retrieve_context(
+    state: AgentState, session: AsyncSession | None = None
+) -> dict[str, Any]:
     """
     Generates embedding for the query and retrieves relevant document chunks from PostgreSQL.
     """
@@ -71,21 +100,26 @@ async def retrieve_context(state: AgentState, session: Optional[AsyncSession] = 
                 top_k=settings.RAG_TOP_K,
             )
 
-            retrieved_chunks: List[Dict[str, Any]] = []
-            citations: List[Dict[str, Any]] = []
+            retrieved_chunks: list[dict[str, Any]] = []
+            citations: list[dict[str, Any]] = []
 
             for item in search_results:
                 chunk_dict = item.model_dump()
                 retrieved_chunks.append(chunk_dict)
-                citations.append({
-                    "document_id": item.document_id,
-                    "filename": item.filename,
-                    "chunk_index": item.chunk_index,
-                    "score": item.score,
-                    "snippet": item.content[:200] + ("..." if len(item.content) > 200 else ""),
-                })
+                citations.append(
+                    {
+                        "document_id": item.document_id,
+                        "filename": item.filename,
+                        "chunk_index": item.chunk_index,
+                        "score": item.score,
+                        "snippet": item.content[:200]
+                        + ("..." if len(item.content) > 200 else ""),
+                    }
+                )
 
-            logger.info(f"Retrieved {len(retrieved_chunks)} relevant context chunks for query.")
+            logger.info(
+                f"Retrieved {len(retrieved_chunks)} relevant context chunks for query."
+            )
             return {
                 "retrieved_chunks": retrieved_chunks,
                 "citations": citations,
@@ -99,12 +133,15 @@ async def retrieve_context(state: AgentState, session: Optional[AsyncSession] = 
             }
 
 
-async def generate_response(state: AgentState) -> Dict[str, Any]:
+async def generate_response(state: AgentState) -> dict[str, Any]:
     """
     Constructs the prompt and generates the response using Groq LLM.
     If context chunks were retrieved, grounds the answer in those chunks.
     """
-    with opik_tracer.trace_span("node_generate_response", {"chunks_count": len(state.get("retrieved_chunks", []))}):
+    with opik_tracer.trace_span(
+        "node_generate_response",
+        {"chunks_count": len(state.get("retrieved_chunks", []))},
+    ):
         chunks = state.get("retrieved_chunks", [])
         system_base = state.get("system_prompt") or (
             "You are Eve, an intelligent, helpful, and concise AI assistant. "
@@ -112,7 +149,7 @@ async def generate_response(state: AgentState) -> Dict[str, Any]:
             "ground your response strictly in the context and cite relevant sources."
         )
 
-        messages: List[Dict[str, str]] = []
+        messages: list[dict[str, str]] = []
 
         if chunks:
             context_blocks = []

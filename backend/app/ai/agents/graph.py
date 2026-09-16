@@ -12,16 +12,17 @@ Assembles and compiles Eve\'s decision-making state machine:
                generate_response -> [END]
 """
 
-from typing import Any, Dict, List, Optional
-from langgraph.graph import StateGraph, END
+from typing import Any
+
+from langgraph.graph import END, StateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.ai.agents.state import AgentState
+
 from app.ai.agents.nodes import (
     classify_request,
-    retrieve_context,
     generate_response,
+    retrieve_context,
 )
-from app.core.logging import logger
+from app.ai.agents.state import AgentState
 
 
 def route_after_classification(state: AgentState) -> str:
@@ -31,7 +32,7 @@ def route_after_classification(state: AgentState) -> str:
     return "generate_response"
 
 
-def build_eve_graph(session: Optional[AsyncSession] = None):
+def build_eve_graph(session: AsyncSession | None = None):
     """
     Constructs and compiles the LangGraph StateGraph.
     Passes database session closure to retrieve_context node when provided.
@@ -41,7 +42,7 @@ def build_eve_graph(session: Optional[AsyncSession] = None):
     # 1. Add functional nodes
     workflow.add_node("classify_request", classify_request)
 
-    async def retrieve_context_wrapper(state: AgentState) -> Dict[str, Any]:
+    async def retrieve_context_wrapper(state: AgentState) -> dict[str, Any]:
         return await retrieve_context(state, session=session)
 
     workflow.add_node("retrieve_context", retrieve_context_wrapper)
@@ -67,11 +68,11 @@ def build_eve_graph(session: Optional[AsyncSession] = None):
 
 async def execute_agent_workflow(
     query: str,
-    conversation_id: Optional[str] = None,
-    history: Optional[List[Dict[str, str]]] = None,
-    system_prompt: Optional[str] = None,
-    session: Optional[AsyncSession] = None,
-) -> Dict[str, Any]:
+    conversation_id: str | None = None,
+    history: list[dict[str, str]] | None = None,
+    system_prompt: str | None = None,
+    session: AsyncSession | None = None,
+) -> dict[str, Any]:
     """
     Convenience runner executing the complete LangGraph agent loop.
     Returns final state dictionary containing response_content, citations, and execution metadata.

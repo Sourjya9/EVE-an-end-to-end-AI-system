@@ -1,4 +1,4 @@
-﻿"""
+"""
 Semantic Vector Retriever.
 
 Executes vector similarity search using pgvector cosine distance operator (<=>)
@@ -6,20 +6,20 @@ against stored document chunks, with pure python fallback for SQLite test enviro
 """
 
 import math
-from typing import Any, Dict, List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
-from app.core.logging import logger
 from app.core.observability.opik import opik_tracer
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.schemas.rag import SearchResultItem
 
 
-def _cosine_similarity(v1: List[float], v2: List[float]) -> float:
+def _cosine_similarity(v1: list[float], v2: list[float]) -> float:
     """Fallback cosine similarity computation for tests."""
-    dot = sum(a * b for a, b in zip(v1, v2))
+    dot = sum(a * b for a, b in zip(v1, v2, strict=True))
     norm_a = math.sqrt(sum(a * a for a in v1))
     norm_b = math.sqrt(sum(b * b for b in v2))
     if norm_a == 0.0 or norm_b == 0.0:
@@ -33,15 +33,17 @@ class VectorRetriever:
     async def search(
         self,
         session: AsyncSession,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = settings.RAG_TOP_K,
-        document_id: Optional[str] = None,
-    ) -> List[SearchResultItem]:
+        document_id: str | None = None,
+    ) -> list[SearchResultItem]:
         """
         Retrieves top_k document chunks most similar to query_embedding.
         Uses pgvector cosine distance operator (<=>).
         """
-        with opik_tracer.trace_span("retriever_search", {"top_k": top_k, "document_id": document_id}):
+        with opik_tracer.trace_span(
+            "retriever_search", {"top_k": top_k, "document_id": document_id}
+        ):
             # Check database dialect to support both PostgreSQL (pgvector) and SQLite (tests)
             bind = session.bind or session.get_bind()
             dialect_name = bind.dialect.name if bind else "postgresql"
@@ -68,7 +70,7 @@ class VectorRetriever:
                 result = await session.execute(query)
                 rows = result.all()
 
-                results: List[SearchResultItem] = []
+                results: list[SearchResultItem] = []
                 for chunk, filename, distance in rows:
                     similarity_score = max(0.0, round(1.0 - float(distance), 4))
                     results.append(
@@ -97,7 +99,7 @@ class VectorRetriever:
                 result = await session.execute(query)
                 rows = result.all()
 
-                scored: List[tuple] = []
+                scored: list[tuple] = []
                 for chunk, filename in rows:
                     if chunk.embedding is not None:
                         emb = list(chunk.embedding)

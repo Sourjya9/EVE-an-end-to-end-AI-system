@@ -1,9 +1,8 @@
-﻿"""
+"""
 Unit Tests for Document Chunking.
 """
 
-import pytest
-from app.ai.rag.chunking import recursive_split_text, TextChunk
+from app.ai.rag.chunking import recursive_split_text
 
 
 def test_empty_text_returns_empty_chunks():
