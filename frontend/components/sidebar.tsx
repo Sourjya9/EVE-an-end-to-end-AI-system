@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { MessageSquare, FileText, Plus, Trash2, ShieldCheck, Terminal } from 'lucide-react';
 import { fetchConversations, deleteConversation, fetchHealth } from '@/lib/api';
 import { Conversation } from '@/lib/types';
 
@@ -11,117 +10,170 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [healthStatus, setHealthStatus] = useState<string>('checking...');
+  const [online, setOnline] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     loadConversations();
-    checkBackendHealth();
+    checkHealth();
   }, [pathname]);
 
   const loadConversations = async () => {
-    try {
-      const list = await fetchConversations();
-      setConversations(list);
-    } catch (e) {
-      // Backend may be booting
-    }
+    try { setConversations(await fetchConversations()); } catch {}
   };
 
-  const checkBackendHealth = async () => {
-    try {
-      const h = await fetchHealth();
-      setHealthStatus(h.status);
-    } catch (e) {
-      setHealthStatus('offline');
-    }
+  const checkHealth = async () => {
+    try { const h = await fetchHealth(); setOnline(h.status === 'healthy'); } catch { setOnline(false); }
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
     e.stopPropagation();
+    e.preventDefault();
     try {
       await deleteConversation(id);
-      setConversations((prev) => prev.filter((c) => c.id !== id));
-      router.push('/chat');
-    } catch (err) {
-      console.error(err);
-    }
+      setConversations(prev => prev.filter(c => c.id !== id));
+      if (pathname.includes(id)) router.push('/chat');
+    } catch {}
+  };
+
+  const navItem = (href: string, label: string) => {
+    const active = pathname === href || (href === '/chat' && pathname.startsWith('/chat'));
+    return (
+      <Link href={href} style={{
+        display: 'flex', alignItems: 'center', gap: '0.6rem',
+        padding: '0.45rem 0.75rem',
+        borderRadius: 7,
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+        background: active ? 'var(--bg-hover)' : 'transparent',
+        textDecoration: 'none',
+        transition: 'all 0.1s',
+      }}>
+        {label}
+      </Link>
+    );
   };
 
   return (
-    <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col h-full select-none">
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-white text-lg tracking-tight">
-          <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-sm">
-            E
-          </div>
-          <span>Eve AI</span>
+    <aside style={{
+      width: 256,
+      background: 'var(--bg-secondary)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      flexShrink: 0,
+    }}>
+      {/* Logo */}
+      <div style={{
+        padding: '1rem 1rem 0.75rem',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 7,
+            background: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-light)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 13, color: 'var(--text-primary)',
+          }}>E</div>
+          <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Eve</span>
         </Link>
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800">
-          <span className={`w-2 h-2 rounded-full ${healthStatus === 'healthy' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          {healthStatus}
-        </div>
+        <div style={{
+          width: 7, height: 7, borderRadius: '50%',
+          background: online ? '#4ade80' : '#555',
+          flexShrink: 0,
+        }} title={online ? 'Backend online' : 'Backend offline'} />
       </div>
 
-      <div className="p-3 space-y-2">
-        <Link
-          href="/chat"
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Conversation
+      {/* Nav */}
+      <div style={{ padding: '0.6rem 0.6rem 0' }}>
+        <Link href="/chat" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+          padding: '0.5rem',
+          borderRadius: 7,
+          fontSize: '0.8rem',
+          fontWeight: 500,
+          color: 'var(--text-secondary)',
+          border: '1px solid var(--border-light)',
+          background: 'transparent',
+          textDecoration: 'none',
+          marginBottom: '0.5rem',
+          transition: 'all 0.1s',
+        }}>
+          + New chat
         </Link>
-
-        <nav className="flex flex-col gap-1 pt-2">
-          <Link
-            href="/chat"
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              pathname === '/chat' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            Chat
-          </Link>
-          <Link
-            href="/documents"
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              pathname === '/documents' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            Knowledge Base
-          </Link>
-        </nav>
+        {navItem('/chat', 'Chat')}
+        {navItem('/documents', 'Documents')}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-1">
-          Recent Chats
-        </div>
-        {conversations.length === 0 ? (
-          <div className="text-xs text-slate-500 px-3 py-2 italic">No conversations yet</div>
-        ) : (
-          conversations.map((c) => (
-            <div
-              key={c.id}
-              className="group flex items-center justify-between px-3 py-2 rounded-md text-sm text-slate-300 hover:bg-slate-900 hover:text-white cursor-pointer transition-colors"
-              onClick={() => router.push(`/chat?id=${c.id}`)}
-            >
-              <span className="truncate text-xs">{c.title}</span>
-              <button
-                onClick={(e) => handleDelete(e, c.id)}
-                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-opacity p-1"
-                title="Delete conversation"
+      {/* Conversation history */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 0.6rem 0' }}>
+        {conversations.length > 0 && (
+          <>
+            <div style={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              padding: '0 0.5rem 0.5rem',
+            }}>Recent</div>
+            {conversations.map(c => (
+              <div
+                key={c.id}
+                onClick={() => router.push(`/chat?id=${c.id}`)}
+                onMouseEnter={() => setHoveredId(c.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.4rem 0.6rem',
+                  borderRadius: 7,
+                  cursor: 'pointer',
+                  background: hoveredId === c.id ? 'var(--bg-hover)' : 'transparent',
+                  transition: 'background 0.1s',
+                  marginBottom: 2,
+                }}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))
+                <span style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--text-secondary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  flex: 1,
+                }}>{c.title}</span>
+                {hoveredId === c.id && (
+                  <button
+                    onClick={(e) => handleDelete(e, c.id)}
+                    style={{
+                      marginLeft: 4, padding: '2px 6px',
+                      borderRadius: 5, border: 'none',
+                      background: 'transparent',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer', fontSize: 14, lineHeight: 1,
+                    }}
+                    title="Delete"
+                  >×</button>
+                )}
+              </div>
+            ))}
+          </>
         )}
       </div>
 
-      <div className="p-3 border-t border-slate-800 text-xs text-slate-500 flex items-center justify-between">
-        <span>v0.1.0 • Groq + pgvector</span>
+      {/* Footer */}
+      <div style={{
+        padding: '0.75rem 1rem',
+        borderTop: '1px solid var(--border)',
+        fontSize: '0.7rem',
+        color: 'var(--text-muted)',
+      }}>
+        Eve v0.1.0
       </div>
     </aside>
   );

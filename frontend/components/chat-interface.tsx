@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Send, Bot, User, Sparkles, AlertCircle } from 'lucide-react';
 import CitationBadge from './citation-badge';
 import { fetchConversation, streamChat } from '@/lib/api';
 import { Message, Citation } from '@/lib/types';
@@ -16,8 +15,8 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (activeId) {
@@ -30,178 +29,174 @@ export default function ChatInterface() {
   }, [activeId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
 
   const loadConversation = async (id: string) => {
-    try {
-      const detail = await fetchConversation(id);
-      setMessages(detail.messages);
-    } catch (err) {
-      console.error(err);
-    }
+    try { setMessages((await fetchConversation(id)).messages); } catch {}
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!input.trim() || isStreaming) return;
 
-    const userText = input.trim();
+    const text = input.trim();
     setInput('');
     setError(null);
 
-    // Append user message immediately
-    const tempUserMsg: Message = {
-      id: String(Date.now()),
-      conversation_id: conversationId || '',
-      role: 'user',
-      content: userText,
-      created_at: new Date().toISOString(),
+    const userMsg: Message = {
+      id: String(Date.now()), conversation_id: conversationId || '',
+      role: 'user', content: text, created_at: new Date().toISOString(),
+    };
+    const asstMsg: Message = {
+      id: String(Date.now() + 1), conversation_id: conversationId || '',
+      role: 'assistant', content: '', citations: null, created_at: new Date().toISOString(),
     };
 
-    // Placeholder for streaming assistant response
-    const tempAsstMsg: Message = {
-      id: String(Date.now() + 1),
-      conversation_id: conversationId || '',
-      role: 'assistant',
-      content: '',
-      citations: null,
-      created_at: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, tempUserMsg, tempAsstMsg]);
+    setMessages(prev => [...prev, userMsg, asstMsg]);
     setIsStreaming(true);
 
-    let accumulatedContent = '';
+    let accumulated = '';
     let currentCitations: Citation[] = [];
 
-    await streamChat(
-      userText,
-      conversationId,
+    await streamChat(text, conversationId,
       (chunk) => {
-        if (chunk.conversation_id && !conversationId) {
-          setConversationId(chunk.conversation_id);
-        }
-        if (chunk.citations) {
-          currentCitations = chunk.citations;
-        }
-        if (chunk.delta) {
-          accumulatedContent += chunk.delta;
-        }
+        if (chunk.conversation_id && !conversationId) setConversationId(chunk.conversation_id);
+        if (chunk.citations) currentCitations = chunk.citations;
+        if (chunk.delta) accumulated += chunk.delta;
 
-        setMessages((prev) => {
+        setMessages(prev => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
-          if (last && last.role === 'assistant') {
-            last.content = accumulatedContent;
+          if (last?.role === 'assistant') {
+            last.content = accumulated;
             last.citations = currentCitations;
           }
           return updated;
         });
-
-        if (chunk.done) {
-          setIsStreaming(false);
-        }
+        if (chunk.done) setIsStreaming(false);
       },
-      (err) => {
-        setError(err.message);
-        setIsStreaming(false);
-      }
+      (err) => { setError(err.message); setIsStreaming(false); }
     );
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
   return (
-    <div className="flex flex-col h-full w-full max-w-4xl mx-auto p-4">
-      {/* Message Feed */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 760, margin: '0 auto', width: '100%', padding: '0 1rem' }}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', paddingTop: '2rem', paddingBottom: '1rem' }}>
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <h2 className="text-lg font-semibold text-slate-300">Start a conversation with Eve</h2>
-            <p className="text-sm text-slate-400 max-w-md">
-              Ask questions about your uploaded documents, discuss architecture, or test LangGraph reasoning flows.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', gap: '0.75rem', color: 'var(--text-muted)' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 20, color: 'var(--text-secondary)' }}>E</div>
+            <span style={{ fontSize: '0.9rem' }}>How can I help you today?</span>
           </div>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex gap-3 text-sm ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {m.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                  <Bot className="w-4 h-4" />
-                </div>
-              )}
-
-              <div
-                className={`max-w-[80%] rounded-xl px-4 py-3 ${
-                  m.role === 'user'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-700/20'
-                    : 'bg-slate-800/80 border border-slate-700/50 text-slate-200'
-                }`}
-              >
-                <div className="whitespace-pre-wrap leading-relaxed">
-                  {m.content || (isStreaming && m.role === 'assistant' ? (
-                    <span className="inline-flex gap-1 items-center text-slate-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse delay-150" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse delay-300" />
-                    </span>
-                  ) : null)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {messages.map(m => (
+              <div key={m.id} style={{
+                display: 'flex',
+                flexDirection: m.role === 'user' ? 'row-reverse' : 'row',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+              }}>
+                {/* Avatar */}
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                  background: m.role === 'user' ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+                  border: '1px solid var(--border-light)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.7rem', fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                }}>
+                  {m.role === 'user' ? 'U' : 'E'}
                 </div>
 
-                {m.citations && m.citations.length > 0 && (
-                  <CitationBadge citations={m.citations} />
-                )}
+                {/* Bubble */}
+                <div style={{
+                  maxWidth: '80%',
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: 12,
+                  fontSize: '0.9rem',
+                  lineHeight: 1.65,
+                  background: m.role === 'user' ? 'var(--bg-tertiary)' : 'transparent',
+                  border: m.role === 'user' ? '1px solid var(--border)' : 'none',
+                  color: 'var(--text-primary)',
+                }}>
+                  {m.content ? (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                  ) : (
+                    isStreaming && m.role === 'assistant' ? (
+                      <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'pulse 1s infinite' }} />
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'pulse 1s 0.2s infinite' }} />
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'pulse 1s 0.4s infinite' }} />
+                      </span>
+                    ) : null
+                  )}
+                  {m.citations && m.citations.length > 0 && <CitationBadge citations={m.citations} />}
+                </div>
               </div>
-
-              {m.role === 'user' && (
-                <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-300 shrink-0">
-                  <User className="w-4 h-4" />
-                </div>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={bottomRef} />
       </div>
 
-      {/* Error alert */}
+      {/* Error */}
       {error && (
-        <div className="mb-3 p-3 rounded-lg bg-red-950/60 border border-red-800/50 text-red-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-          <span>{error}</span>
+        <div style={{ padding: '0.5rem 0.75rem', borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid #3a1a1a', color: '#f87171', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+          {error}
         </div>
       )}
 
-      {/* Input bar */}
-      <form onSubmit={handleSend} className="pt-3">
-        <div className="relative flex items-center">
+      {/* Input */}
+      <div style={{ paddingBottom: '1.25rem', paddingTop: '0.5rem' }}>
+        <div style={{
+          display: 'flex', alignItems: 'flex-end', gap: '0.5rem',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-light)',
+          borderRadius: 12, padding: '0.6rem 0.75rem',
+        }}>
           <textarea
+            ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend(e);
-              }
-            }}
-            placeholder="Message Eve... (Shift+Enter for newline)"
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Message Eve..."
             rows={1}
-            className="w-full rounded-xl bg-slate-800/90 border border-slate-700/80 pl-4 pr-12 py-3 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 resize-none"
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: 1.5,
+              resize: 'none', maxHeight: '160px', overflowY: 'auto',
+              fontFamily: 'inherit',
+            }}
           />
           <button
-            type="submit"
+            onClick={() => handleSend()}
             disabled={!input.trim() || isStreaming}
-            className="absolute right-2 p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 transition-colors"
+            style={{
+              padding: '0.4rem 0.9rem',
+              borderRadius: 8,
+              border: 'none',
+              background: input.trim() && !isStreaming ? 'var(--text-primary)' : 'var(--bg-hover)',
+              color: input.trim() && !isStreaming ? 'var(--bg-primary)' : 'var(--text-muted)',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              cursor: input.trim() && !isStreaming ? 'pointer' : 'not-allowed',
+              transition: 'all 0.15s',
+              flexShrink: 0,
+            }}
           >
-            <Send className="w-4 h-4" />
+            Send
           </button>
         </div>
-      </form>
+        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+          Enter to send · Shift+Enter for newline
+        </div>
+      </div>
     </div>
   );
 }

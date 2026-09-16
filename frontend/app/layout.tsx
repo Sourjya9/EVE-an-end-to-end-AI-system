@@ -3,16 +3,16 @@ import { ReactNode } from 'react';
 import Sidebar from '@/components/sidebar';
 
 export const metadata = {
-  title: 'Eve - Production AI Assistant',
-  description: 'Full-stack AI assistant with LangGraph, Groq, Jina AI, pgvector, and Next.js',
+  title: 'Eve',
+  description: 'AI assistant with RAG, LangGraph, and Groq',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
+    <html lang="en">
+      <body style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
         <Sidebar />
-        <main className="flex-1 flex flex-col h-full min-w-0 bg-slate-900">
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg-primary)' }}>
           {children}
         </main>
       </body>

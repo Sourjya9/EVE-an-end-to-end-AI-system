@@ -1,70 +1,88 @@
 import Link from 'next/link';
-import { MessageSquare, FileText, Cpu, Database, Shield, Zap, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="flex-1 overflow-y-auto p-8 max-w-5xl mx-auto flex flex-col justify-center">
-      <div className="text-center space-y-4 mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Production-Style AI Assistant
-        </div>
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-6xl">
-          Meet <span className="text-emerald-400">Eve</span>
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem',
+      gap: '2rem',
+    }}>
+      <div style={{ textAlign: 'center', maxWidth: '480px' }}>
+        <div style={{
+          width: 48, height: 48,
+          borderRadius: 12,
+          background: 'var(--bg-tertiary)',
+          border: '1px solid var(--border-light)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, fontWeight: 700,
+          color: 'var(--text-primary)',
+          margin: '0 auto 1.5rem',
+        }}>E</div>
+
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
+          Eve
         </h1>
-        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-          An end-to-end AI assistant featuring LangGraph reasoning, Groq ultra-low latency inference,
-          Jina AI embeddings, and PostgreSQL pgvector semantic retrieval.
+        <p style={{ color: 'var(--text-secondary)', margin: '0 0 2rem', lineHeight: 1.6 }}>
+          An AI assistant with document understanding, semantic search, and conversational memory.
         </p>
-        <div className="flex justify-center gap-4 pt-4">
-          <Link
-            href="/chat"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-all shadow-lg shadow-emerald-600/20"
-          >
-            <MessageSquare className="w-5 h-5" />
-            Start Chatting
-            <ArrowRight className="w-4 h-4" />
+
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <Link href="/chat" style={{
+            padding: '0.6rem 1.25rem',
+            borderRadius: 8,
+            background: 'var(--text-primary)',
+            color: 'var(--bg-primary)',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            textDecoration: 'none',
+          }}>
+            Start chatting
           </Link>
-          <Link
-            href="/documents"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-all"
-          >
-            <FileText className="w-5 h-5" />
-            Ingest Documents
+          <Link href="/documents" style={{
+            padding: '0.6rem 1.25rem',
+            borderRadius: 8,
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-light)',
+            fontWeight: 500,
+            fontSize: '0.875rem',
+            textDecoration: 'none',
+          }}>
+            Manage documents
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4">
-            <Cpu className="w-5 h-5" />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '0.75rem',
+        maxWidth: '640px',
+        width: '100%',
+      }}>
+        {[
+          { label: 'LangGraph Agent', desc: 'Routes queries, retrieves context, generates grounded answers.' },
+          { label: 'pgvector RAG', desc: 'Chunk, embed, and search documents with cosine similarity.' },
+          { label: 'Groq Streaming', desc: 'Low-latency token streaming with source citations.' },
+        ].map(f => (
+          <div key={f.label} style={{
+            padding: '1rem',
+            borderRadius: 10,
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+              {f.label}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              {f.desc}
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">LangGraph Agent</h3>
-          <p className="text-sm text-slate-400">
-            Stateful graph orchestration with intent classification, conditional routing, and grounded generation.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 mb-4">
-            <Database className="w-5 h-5" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">pgvector RAG</h3>
-          <p className="text-sm text-slate-400">
-            Clean chunking, Jina v3 dense embeddings, and cosine similarity retrieval directly in PostgreSQL.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 transition-all">
-          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 mb-4">
-            <Zap className="w-5 h-5" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">Groq Streaming</h3>
-          <p className="text-sm text-slate-400">
-            Lightning-fast token streaming over SSE with source citations and responsive Markdown rendering.
-          </p>
-        </div>
+        ))}
       </div>
     </div>
   );
