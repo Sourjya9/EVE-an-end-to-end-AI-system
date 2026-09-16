@@ -24,23 +24,23 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r eve/backend/requirements.txt
+          pip install -r backend/requirements.txt
 
       - name: Run Ruff Linter
         run: |
-          ruff check eve/backend
+          ruff check backend
 
       - name: Run Ruff Formatter Check
         run: |
-          ruff format --check eve/backend
+          ruff format --check backend
 
       - name: Run MyPy Type Check
         run: |
-          mypy eve/backend/app
+          mypy backend/app
 
       - name: Run Pytest Suite
         run: |
-          cd eve/backend && pytest tests -v --cov=app --cov-report=term-missing
+          cd backend && pytest tests -v --cov=app --cov-report=term-missing
 
   frontend-quality:
     name: Frontend Type Check & Build
@@ -55,12 +55,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'eve/frontend/package.json'
+          cache-dependency-path: 'frontend/package.json'
 
       - name: Install Dependencies
         run: |
-          cd eve/frontend && npm ci
+          cd frontend && npm ci
 
       - name: Build Next.js Application
         run: |
-          cd eve/frontend && npm run build
+          cd frontend && npm run build
+
+
+
