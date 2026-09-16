@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Groq LLM Settings
     GROQ_API_KEY: str = Field(default="", description="API key for Groq Cloud inference")
-    GROQ_MODEL: str = Field(default="llama-3.1-8b-instant", description="Model name for Groq chat completions")
+    GROQ_MODEL: str = Field(default="qwen/qwen3.8-27b", description="Model name for Groq chat completions")
     GROQ_TEMPERATURE: float = 0.2
     GROQ_MAX_TOKENS: int = 2048
     GROQ_TIMEOUT_SECONDS: float = 30.0
